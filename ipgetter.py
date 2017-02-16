@@ -60,7 +60,6 @@ class IPgetter(object):
     def __init__(self):
         self.server_list = ['http://ip.dnsexit.com',
                             'http://ifconfig.me/ip',
-                            'http://echoip.com',
                             'http://ipecho.net/plain',
                             'http://checkip.dyndns.org/plain',
                             'http://ipogre.com/linux.php',
