@@ -26,11 +26,12 @@ API Usage
 Copyright 2014 phoemur@gmail.com
 This work is free. You can redistribute it and/or modify it under the
 terms of the Do What The Fuck You Want To Public License, Version 2,
-as published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
+as published by Sam Hocevar. See https://www.wtfpl.net/ for more details.
 """
 
 import re
 import random
+import ssl
 
 from sys import version_info
 
@@ -50,112 +51,104 @@ def myip():
 
 class IPgetter(object):
 
-    '''
+    """
     This class is designed to fetch your external IP address from the internet.
     It is used mostly when behind a NAT.
     It picks your IP randomly from a serverlist to minimize request overhead
     on a single server
-    '''
+    """
 
     def __init__(self):
-        self.server_list = ['http://ip.dnsexit.com',
-                            'http://ifconfig.me/ip',
-                            'http://ipecho.net/plain',
-                            'http://checkip.dyndns.org/plain',
-                            'http://ipogre.com/linux.php',
-                            'http://whatismyipaddress.com/',
-                            'http://websiteipaddress.com/WhatIsMyIp',
-                            'http://getmyipaddress.org/',
-                            'http://www.my-ip-address.net/',
-                            'http://myexternalip.com/raw',
-                            'http://www.canyouseeme.org/',
-                            'http://www.trackip.net/',
-                            'http://icanhazip.com/',
-                            'http://www.iplocation.net/',
-                            'http://www.howtofindmyipaddress.com/',
-                            'http://www.ipchicken.com/',
-                            'http://whatsmyip.net/',
-                            'http://www.ip-adress.com/',
-                            'http://checkmyip.com/',
-                            'http://www.tracemyip.org/',
-                            'http://www.lawrencegoetz.com/programs/ipinfo/',
-                            'http://www.findmyip.co/',
-                            'http://ip-lookup.net/',
-                            'http://www.dslreports.com/whois',
-                            'http://www.mon-ip.com/en/my-ip/',
-                            'http://www.myip.ru',
-                            'http://ipgoat.com/',
-                            'http://www.myipnumber.com/my-ip-address.asp',
-                            'http://www.whatsmyipaddress.net/',
-                            'http://formyip.com/',
-                            'https://check.torproject.org/',
-                            'http://www.displaymyip.com/',
-                            'http://www.bobborst.com/tools/whatsmyip/',
-                            'http://www.geoiptool.com/',
-                            'https://www.whatsmydns.net/whats-my-ip-address.html',
-                            'https://www.privateinternetaccess.com/pages/whats-my-ip/',
-                            'http://checkip.dyndns.com/',
-                            'http://myexternalip.com/',
-                            'http://www.ip-adress.eu/',
-                            'http://www.infosniper.net/',
-                            'https://wtfismyip.com/text',
-                            'http://ipinfo.io/',
-                            'http://httpbin.org/ip',
-                            'http://ip.ajn.me',
-                            'https://diagnostic.opendns.com/myip',
-                            'https://api.ipify.org']
+        self.server_list = [
+            "http://checkip.dyndns.org/plain",
+            "http://lawrencegoetz.com/programs/ipinfo/",
+            "http://myipnumber.com/my-ip-address.asp",
+            "https://api.ipify.org",
+            "https://bobborst.com/tools/whatsmyip/",
+            "https://canyouseeme.org/",
+            "https://check.torproject.org/",
+            "https://diagnostic.opendns.com/myip",
+            "https://displaymyip.com/",
+            "https://geoiptool.com/",
+            "https://getmyipaddress.org/",
+            "https://httpbin.org/ip",
+            "https://icanhazip.com/",
+            "https://ifconfig.me/ip",
+            "https://ip-adress.com/",
+            "https://ip-adress.eu/",
+            "https://ipchicken.com/",
+            "https://ipecho.net/plain",
+            "https://mon-ip.com/en/my-ip/",
+            "https://my-ip-address.net/",
+            "https://myexternalip.com/raw",
+            "https://privateinternetaccess.com/pages/whats-my-ip/",
+            "https://tracemyip.org/",
+            "https://trackip.net/",
+            "https://whatsmydns.net/whats-my-ip-address.html",
+            "https://whatsmyip.net/",
+            "https://wtfismyip.com/text",
+        ]
 
     def get_externalip(self):
-        '''
+        """
         This function gets your IP from a random server
-        '''
+        """
 
-        myip = ''
-        for i in range(7):
+        myip = ""
+        for i in range(5):
             myip = self.fetch(random.choice(self.server_list))
-            if myip != '':
+            if myip != "":
                 return myip
             else:
                 continue
-        return ''
+        return ""
 
     def fetch(self, server):
-        '''
+        """
         This function gets your IP from a specific server.
-        '''
+        """
         url = None
+
         opener = urllib.build_opener()
-        opener.addheaders = [('User-agent',
-                              "Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0")]
+        addheaders = {
+            "User-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 12_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/69.0.3497.105 Mobile/15E148 Safari/605.1"
+        }
+
+        # Ignore SSL certificate errors
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
 
         try:
-            url = opener.open(server, timeout=2)
+            req = urllib.Request(server, None, addheaders)
+            url = urllib.urlopen(req, timeout=2, context=ctx)
             content = url.read()
 
-            # Didn't want to import chardet. Prefered to stick to stdlib
             if PY3K:
                 try:
-                    content = content.decode('UTF-8')
+                    content = content.decode("UTF-8")
                 except UnicodeDecodeError:
-                    content = content.decode('ISO-8859-1')
+                    content = content.decode("ISO-8859-1")
 
             m = re.search(
-                '(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)',
-                content)
+                "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",
+                content,
+            )
             myip = m.group(0)
-            return myip if len(myip) > 0 else ''
-        except Exception:
-            return ''
+            return myip if len(myip) > 0 else ""
+        except Exception as e:
+            print("Exception raised on url {} -- ".format(server), e)
+            return ""
         finally:
             if url:
                 url.close()
 
     def test(self):
-        '''
+        """
         This functions tests the consistency of the servers
         on the list when retrieving your IP.
         All results should be the same.
-        '''
+        """
 
         resultdict = {}
         for server in self.server_list:
@@ -163,12 +156,25 @@ class IPgetter(object):
 
         ips = sorted(resultdict.values())
         ips_set = set(ips)
-        print('\nNumber of servers: {}'.format(len(self.server_list)))
-        print("IP's :")
-        for ip, ocorrencia in zip(ips_set, map(lambda x: ips.count(x), ips_set)):
-            print('{0} = {1} ocurrenc{2}'.format(ip if len(ip) > 0 else 'broken server', ocorrencia, 'y' if ocorrencia == 1 else 'ies'))
-        print('\n')
-        print(resultdict)
+        print("\nNumber of servers: {}".format(len(self.server_list)))
 
-if __name__ == '__main__':
+        for ip, occurence in zip(ips_set, map(lambda x: ips.count(x), ips_set)):
+            print(
+                "{0} = {1} ocurrenc{2}".format(
+                    ip if len(ip) > 0 else "broken server",
+                    occurence,
+                    "e" if occurence == 1 else "ies",
+                )
+            )
+        print("\n")
+        if any([i == "" for i in resultdict.values()]):
+            print("\n________list of failed servers_______")
+            for _url, _ip in resultdict.items():
+                if _ip == "":
+                    print(_url)
+        print("\n")
+        return resultdict
+
+
+if __name__ == "__main__":
     print(myip())
